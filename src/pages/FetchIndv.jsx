@@ -6,7 +6,7 @@ import { fetchInvPost } from '../api/api';
 export default function FetchIndv(){
     const {id} = useParams();
     const {data, isError, isLoading, error} = useQuery({
-        queryKey: ['post'], 
+        queryKey: ['post',id], 
         queryFn: () => fetchInvPost(id), 
     })
 
