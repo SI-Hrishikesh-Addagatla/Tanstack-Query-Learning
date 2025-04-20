@@ -1,16 +1,27 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { fetchPosts } from '../api/api';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { deletePost, fetchPosts } from '../api/api';
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function FetchRQ(){
 
     const [pageNumber, setPageNumber] = useState(0);
+    const queryClient = useQueryClient();
 
     const {data, isError, isLoading, error} = useQuery({
         queryKey: ['posts',pageNumber], 
         queryFn: () => fetchPosts(pageNumber), 
         placeholderData: keepPreviousData,
+        staleTime: 10000, // with staleTime we can see the effect of delete post
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id) => deletePost(id),
+        onSuccess: (data,id) => {
+            queryClient.setQueryData(['posts',pageNumber], (currElm) => {
+                return currElm.filter((post) => post.id !== id);
+            })
+        }
     })
 
     if(isLoading) return <p>Loading...</p>
@@ -22,13 +33,15 @@ export default function FetchRQ(){
                 {data?.map((currElm)=> {
                     const {id,title,body} = currElm;
                     return (
-                        <NavLink to={`/rq/${id}`}>
-                            <li key={id}>
+                        <li key={id}>
+                            <NavLink to={`/rq/${id}`}>
                                 <p>{id}</p>
                                 <p>{title}</p>
                                 <p>{body}</p>
-                            </li>
-                        </NavLink>
+                            </NavLink>
+                            <button onClick={() => deleteMutation.mutate(id)}>Delete</button>
+                            {/* <button onClick={() => updateMutation.mutate(id)}>Update</button> */}
+                        </li>
                     )
                 })}
             </ul>
